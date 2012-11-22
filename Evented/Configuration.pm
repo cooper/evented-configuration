@@ -9,7 +9,7 @@
 #
 # Events:
 # each time a configuration value changes, change_BLOCKTYPE_BLOCKNAME_KEY is fired with the new and old values.
-# for example a change of oper:cooper:password would fire change_oper_cooper_password(oldpassword, newpassword).
+# for example a change of oper:cooper:password would fire change_oper:cooper_password(oldpassword, newpassword).
 # the event is fired AFTER the actual value is changed.
 #
 package Evented::Configuration;
