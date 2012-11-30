@@ -12,7 +12,7 @@
 # for example a change of oper:cooper:password would fire change_oper:cooper_password(oldpassword, newpassword).
 # the event is fired AFTER the actual value is changed.
 #
-package Evented::Configuration;
+package Evented::Configuration 2.0;
 
 use warnings;
 use strict;
@@ -26,7 +26,7 @@ sub off { undef }
 sub new {
     my ($class, $hashref, $filename) = @_;
     return bless {
-        conf     => $hashref,
+        conf     => $hashref || {},
         filename => $filename
     }, $class;
 }
