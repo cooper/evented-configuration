@@ -12,7 +12,7 @@
 # for example a change of oper:cooper:password would fire change_oper:cooper_password(oldpassword, newpassword).
 # the event is fired AFTER the actual value is changed.
 #
-package Evented::Configuration 2.0;
+package Evented::Configuration 2.1;
 
 use warnings;
 use strict;
@@ -56,7 +56,7 @@ sub parse_config {
         }
 
         # a key and value.
-        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)=(.*)$/ && defined $block) {
+        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)[:=]+(.*)$/ && defined $block) {
             $key = trim($2);
             $val = eval trim($4);
             die "Invalid value in $$conf{filename} line $i: $@\n" if $@;
