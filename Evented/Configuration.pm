@@ -12,15 +12,17 @@
 # for example a change of oper:cooper:password would fire change_oper:cooper_password(oldpassword, newpassword).
 # the event is fired AFTER the actual value is changed.
 #
-package Evented::Configuration 2.1;
+package Evented::Configuration;
 
 use warnings;
 use strict;
 use utf8;
 use parent 'EventedObject';
 
-sub on  { 1 }
-sub off { undef }
+our $VERSION = 2.2;
+
+sub on  () { 1 }
+sub off () { undef }
 
 # create a new configuration instance.
 sub new {
@@ -78,6 +80,15 @@ sub parse_config {
     }
     
     return 1;
+}
+
+# returns true if the block is found.
+# supports unnamed blocks by get(block, key)
+# supports   named blocks by get([block type, block name], key)
+sub has_block {
+    my ($conf, $block) = @_;
+    $block = ['section', $block] if !ref $block || ref $block ne 'ARRAY';
+    return 1 if $conf->{conf}{$block[0]}{$block[1]};
 }
 
 # returns a list of all the names of a block type.
