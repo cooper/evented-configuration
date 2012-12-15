@@ -19,7 +19,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.2;
+our $VERSION = 2.3;
 
 sub on  () { 1 }
 sub off () { undef }
@@ -107,6 +107,16 @@ sub keys_of_block {
     $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
     return my @a unless $conf->{conf}{$blocktype}{$section};
     return keys %{$conf->{conf}{$blocktype}{$section}};
+}
+
+# returns a list of all the values in a block.
+# accepts block type or [block type, block name] as well.
+sub values_of_block {
+    my ($conf, $block, $blocktype, $section) = (shift, shift);
+    $blocktype = (ref $block && ref $block eq 'ARRAY') ? $block->[0] : 'section';
+    $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
+    return my @a unless $conf->{conf}{$blocktype}{$section};
+    return values %{$conf->{conf}{$blocktype}{$section}};
 }
 
 # get a configuration value.
