@@ -19,7 +19,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.4;
+our $VERSION = 2.5;
 
 sub on  () { 1 }
 sub off () { undef }
@@ -88,7 +88,7 @@ sub parse_config {
 sub has_block {
     my ($conf, $block) = @_;
     $block = ['section', $block] if !ref $block || ref $block ne 'ARRAY';
-    return 1 if $conf->{conf}{$block[0]}{$block[1]};
+    return 1 if $conf->{conf}{$block->[0]}{$block->[1]};
 }
 
 # returns a list of all the names of a block type.
