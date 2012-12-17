@@ -19,18 +19,22 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.5;
+our $VERSION = 2.6;
 
 sub on  () { 1 }
 sub off () { undef }
 
 # create a new configuration instance.
 sub new {
-    my ($class, $hashref, $filename) = @_;
-    return bless {
-        conf     => $hashref || {},
-        filename => $filename
-    }, $class;
+    my ($class, %opts) = @_;
+    
+    # if there is no 'conffile' and no 'hashref', assume they are using
+    # the former ($hashref, $filename) initialization arguments.
+    if (!exists $opts{hashref} && !exists $opts{conffile}) {
+        ($opts{hashref}, $opts{conffile}) = (shift, shift);
+    }
+    
+    return bless \%opts, $class;
 }
 
 # parse the configuration file.
