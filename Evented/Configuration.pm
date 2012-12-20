@@ -19,14 +19,14 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.7;
+our $VERSION = 2.8;
 
 sub on  () { 1 }
 sub off () { undef }
 
 # create a new configuration instance.
 sub new {
-    my ($class, %opts) = @_;
+    my ($class, %opts) = (shift, @_);
     
     # if there is no 'conffile' and no 'hashref', assume they are using
     # the former ($hashref, $conffile) initialization arguments.
