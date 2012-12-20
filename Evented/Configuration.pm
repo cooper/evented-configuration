@@ -19,7 +19,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.6;
+our $VERSION = 2.7;
 
 sub on  () { 1 }
 sub off () { undef }
@@ -29,7 +29,7 @@ sub new {
     my ($class, %opts) = @_;
     
     # if there is no 'conffile' and no 'hashref', assume they are using
-    # the former ($hashref, $filename) initialization arguments.
+    # the former ($hashref, $conffile) initialization arguments.
     if (!exists $opts{hashref} && !exists $opts{conffile}) {
         ($opts{hashref}, $opts{conffile}) = (shift, shift);
     }
@@ -40,7 +40,7 @@ sub new {
 # parse the configuration file.
 sub parse_config {
     my ($conf, $i, $block, $name, $key, $val, $config) = shift;
-    open $config, '<', $conf->{filename} or return;
+    open $config, '<', $conf->{conffile} or return;
     
     while (my $line = <$config>) {
 
@@ -65,7 +65,7 @@ sub parse_config {
         elsif ($line =~ m/^(\s*)([\w:]*)(\s*)[:=]+(.*)$/ && defined $block) {
             $key = trim($2);
             $val = eval trim($4);
-            die "Invalid value in $$conf{filename} line $i: $@\n" if $@;
+            die "Invalid value in $$conf{conffile} line $i: $@\n" if $@;
             
             # the value has changed, so send the event.
             if (!exists $conf->{conf}{$block}{$name}{$key} ||
@@ -78,7 +78,7 @@ sub parse_config {
 
         # I don't know how to handle this.
         else {
-            die "Invalid line $i of $$conf{filename}\n";
+            die "Invalid line $i of $$conf{conffile}\n";
         }
 
     }
