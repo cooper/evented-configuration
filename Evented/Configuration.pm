@@ -19,7 +19,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.9;
+our $VERSION = '3.0';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -27,12 +27,6 @@ sub off () { undef }
 # create a new configuration instance.
 sub new {
     my ($class, %opts) = (shift, @_);
-    
-    # if there is no 'conffile' and no 'hashref', assume they are using
-    # the former ($hashref, $conffile) initialization arguments.
-    if (!exists $opts{hashref} && !exists $opts{conffile}) {
-        ($opts{hashref}, $opts{conffile}) = (shift, shift);
-    }
     
     # if we still have no defined conffile, we must give up now.
     if (!defined $opts{conffile}) {
