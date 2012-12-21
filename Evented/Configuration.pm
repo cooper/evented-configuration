@@ -19,7 +19,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = 2.8;
+our $VERSION = 2.9;
 
 sub on  () { 1 }
 sub off () { undef }
@@ -34,7 +34,18 @@ sub new {
         ($opts{hashref}, $opts{conffile}) = (shift, shift);
     }
     
+    # if we still have no defined conffile, we must give up now.
+    if (!defined $opts{conffile}) {
+        $@ = 'no configuration file (conffile) option specified.';
+        return;
+    }
+    
+    # if 'hashref' is provided, use it.
+    $opts{conf} = $opts{hashref} || $opts{conf} || {};
+    
+    # return the new configuration object.
     return bless \%opts, $class;
+    
 }
 
 # parse the configuration file.
