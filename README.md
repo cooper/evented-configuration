@@ -114,15 +114,49 @@ foreach my $key ($conf->keys_of_block('someNamedBlock', 'someName')) {
 
 * **block:** for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of `[block type, block name]`.
 
+## $conf->on_change($block, $key, $code, %opts)
+
+Attaches an event listener for the configuration change event. This event will be fired
+even if the value never existed. If you want a listener to be called the first time the
+configuration is parsed, simply add the listener before calling `parse_config()`.
+Otherwise, add listeners later.
+
+```perl
+# an example with an unnamed block
+$conf->on_change('myUnnamedBlock', 'myKey', sub {
+    my ($event, $old, $new) = @_;
+    ...
+});
+
+# an example with a name block.
+$conf->on_change(['myNamedBlockType', 'myBlockName'], 'someKey', sub {
+    my ($event, $old, $new) = @_;
+    ...
+});
+
+# an example with an unnamed block and register_event() options.
+$conf->on_change('myUnnamedBlock', 'myKey', sub {
+    my ($event, $old, $new) = @_;
+    ...
+}, priority => 100, name => 'myCallback');
+```
+
+### Parameters
+
+* __block__: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of `[block type, block name]`.
+* __key__: the key of the configuration value being listened for.
+* __code__: a code reference to be called when the value is changed.
+* __opts__: a hash of any other options to be passed to EventedObject's `register_event()`.
+
 # Events
 
 Evented::Configuration fires events when configuration values are changed.  
   
 In any case, events are fired with arguments `(old value, new value)`.  
   
-Say you have an unnamed block of type `myBlock`. If you changed the key `myKey` in `myBlock`, Evented::Configuration would fire the event `change_myBlock_myKey`.  
+Say you have an unnamed block of type `myBlock`. If you changed the key `myKey` in `myBlock`, Evented::Configuration would fire the event `eventedObject.change:myBlock:myKey`.  
   
-Now assume you have a named block of type `myBlock` with name `myName`. If you changed the key `myKey` in `myBlock:myName`, Evented::Configuration would fire event `change_myBlock:myName_myKey`.
+Now assume you have a named block of type `myBlock` with name `myName`. If you changed the key `myKey` in `myBlock:myName`, Evented::Configuration would fire event `eventedObject.change:myBlock/myName:myKey`.
 
 # History
 
