@@ -8,10 +8,34 @@
 # foxy-java. Evented::Configuration provides several convenience fetching methods.
 #
 # Events:
-# each time a configuration value changes, change_BLOCKTYPE_BLOCKNAME_KEY is fired with the new and old values.
-# for example a change of oper:cooper:password would fire change_oper:cooper_password(oldpassword, newpassword).
-# the event is fired AFTER the actual value is changed.
 #
+# each time a configuration value changes, change:blocktype/blockname:key is fired. For unnamed
+# blocks, the block type is omitted. For example, a block named 'chocolate' of type
+# 'cookies' would fire the event 'change:cookies/chocolate:favorite' when its 'favorite' key
+# is changed. An unnamed block of type 'fudge' would fire the event 'change:fudge:peanutbutter'
+# when its 'peanutbutter' key is changed.
+#
+# If a value never existed, new values fire change events as well. If you want your
+# listeners to respond to certain values even when the configuration is first loaded,
+# simply add the listeners before calling parse_config(). If you wish for the opposite
+# behavior, do the opposite: apply the handlers after calling parse_config().
+#
+# All events are fired with:
+#    $old - first argument, the former value of this configuration key.
+#    $new - second argument, the new value of this configuration key.
+#
+# The easiest way to attach configuration change events is with the on_change() method.
+# It is also the safest way because event names could possibly change in the future.
+# For example:
+#
+# $conf->on_change(['someBlockType', 'someBlockName'], 'key', sub {
+#     my ($event, $old, $new) = @_;
+#     ...
+# });
+#
+# You can also add additional hash arguments for register_event() to the end.
+#
+
 package Evented::Configuration;
 
 use warnings;
@@ -19,7 +43,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = '3.0';
+our $VERSION = '3.1';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -73,10 +97,19 @@ sub parse_config {
             die "Invalid value in $$conf{conffile} line $i: $@\n" if $@;
             
             # the value has changed, so send the event.
-            if (!exists $conf->{conf}{$block}{$name}{$key} ||
-                $conf->{conf}{$block}{$name}{$key} ne $val) {
-                my $old = $conf->{conf}{$block}{$name}{$key} = $val;
-                $conf->fire_event("change_${block}_${name}_${key}" => $old, $val);
+            if (!exists $conf->{conf}{$block}{$name}{$key} || $conf->{conf}{$block}{$name}{$key} ne $val) {
+            
+                # determine the name of the event.
+                my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
+                my $event_name = "eventedConfiguration.change:$eblock:$key";
+                
+                # fetch the old value and set the new value.
+                my $old = $conf->{conf}{$block}{$name}{$key};
+                $conf->{conf}{$block}{$name}{$key} = $old;
+                
+                # fire the event.
+                $conf->fire_event($event_name => $old, $val);
+                
             }
             
         }
@@ -155,6 +188,26 @@ sub trim {
     $string =~ s/\s+$//;
     $string =~ s/^\s+//;
     return $string;
+}
+
+# attach a configuration change listener.
+# see notes at top of file for usage.
+sub on_change {
+    my ($conf, $block, $key, $code, %opts) = @_;
+    my ($block_type, $block_name) = ('section', $block);
+    
+    # if $block is an array reference, it's (type, name).
+    if (defined ref $block && ref $block eq 'ARRAY') {
+        ($block_type, $block_name) = @$block;
+    }
+    
+    # determine the name of the event.
+    $block = $block_type eq 'section' ? $block_name : $block_type.q(/).$block_name;
+    my $event_name = "eventedConfiguration.change:$block:$key";
+
+    # register the event.
+    return $conf->register_event($event_name => $code, %opts);
+    
 }
 
 1
