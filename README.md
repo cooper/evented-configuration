@@ -146,7 +146,7 @@ $conf->on_change('myUnnamedBlock', 'myKey', sub {
 * __block__: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of `[block type, block name]`.
 * __key__: the key of the configuration value being listened for.
 * __code__: a code reference to be called when the value is changed.
-* __opts__: a hash of any other options to be passed to EventedObject's `register_event()`.
+* __opts__: *optional*, a hash of any other options to be passed to EventedObject's `register_event()`.
 
 # Events
 
@@ -161,3 +161,8 @@ Now assume you have a named block of type `myBlock` with name `myName`. If you c
 # History
 
 The Evented::Configuration parser first appeared procedurally in juno-ircd version 2. The format has not changed since. The parser was used in several other IRC softwares, including foxy-java IRC bot and ntirc IRC client. It was also included in all versions of juno-ircd succeeding juno2: juno3, juno-mesh, and juno5. In the Arinity IRC services package, the parser had a basic objective interface. However, Evented::Configuration was not based on this interface. Evented::Configuration appeared initially in UICd, the Universal Internet Chat server daemon.
+
+# See also
+
+* [EventedObject](https://github.com/cooper/evented-object) - an event framework and the base class of Evented::Configuration.
+* [Evented::Database](https://github.com/cooper/evented-database) - a database built upon Evented::Configuration with seamless database functionality added to a configuration class.
