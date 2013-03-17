@@ -43,7 +43,7 @@ use strict;
 use utf8;
 use parent 'EventedObject';
 
-our $VERSION = '3.1';
+our $VERSION = '3.2';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -105,7 +105,7 @@ sub parse_config {
                 
                 # fetch the old value and set the new value.
                 my $old = $conf->{conf}{$block}{$name}{$key};
-                $conf->{conf}{$block}{$name}{$key} = $old;
+                $conf->{conf}{$block}{$name}{$key} = $val;
                 
                 # fire the event.
                 $conf->fire_event($event_name => $old, $val);
