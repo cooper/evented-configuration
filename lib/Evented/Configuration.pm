@@ -210,4 +210,92 @@ sub on_change {
     
 }
 
-1
+1;
+
+=head1 NAME
+
+B<Evented::Configuration> - an event-driven objective configuration class and parser for
+Perl software built upon L<EventedObject>.
+
+=head1 SYNOPSIS
+
+=head2 Example configuration file
+
+ # Comments
+ 
+ # Hello, I am a comment.
+ # I am also a comment.
+ 
+ # Unnamed blocks
+ 
+ [ someBlock ]
+ 
+ someKey  = "some string"
+ otherKey = 12
+ another  = ['hello', 'there']
+ evenMore = ['a'..'z']
+ 
+ # Named blocks
+ 
+ [ cookies: sugar ]
+ 
+ favorites = ['sugar cookie', 'snickerdoodle']
+ 
+ [ cookies: chocolate ]
+ 
+ favorites = ['chocolate macadamia nut', 'chocolate chip']
+
+=head1 DESCRIPTION
+
+As the name suggests, event firing is what makes Evented::Configuration unique in
+comparison to other configuration classes.
+
+=over 4
+
+=item *
+
+B<Blocks>: Evented::Configuration's configuration is block-styled, with all keys and values associated with a block. Blocks can be "named," meaning there are several blocks of one type with different names, or they can be "unnamed," meaning there is only one block of that type.
+
+=item *
+
+B<Objective>: Evented::Configuration's objective interface allows you to store nothing more than the configuration object. Then, make the object accessible where you need it.
+
+=item *
+
+B<Event-driven>: Evented::Configuration is based upon the EventedObject framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
+
+=item *
+
+B<Convenience>: Most configuration parsers spit out nothing more than a hash reference of keys and values. Evented::Configuration instead supplies several convenient methods for fetching configuration data.
+
+=back
+
+=head1 AUTHOR
+
+L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
+
+Copyright E<copy> 2011-2013. Released under BSD license.
+
+=over 4
+
+=item *
+
+B<IRC channel>: L<irc.notroll.net #k|irc://irc.notroll.net/k>
+
+=item *
+
+B<Email>: cooper@cpan.org
+
+=item *
+
+B<PAUSE/CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
+
+=item *
+
+B<GitHub>: L<cooper|https://github.com/cooper>
+
+=back
+
+Comments, complaints, and recommendations are accepted. IRC is my preferred communication
+medium. Bugs may be reported on
+L<RT|https://rt.cpan.org/Public/Dist/Display.html?Name=Evented-Configuration>.
