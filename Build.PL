@@ -7,7 +7,10 @@ my $build = Module::Build->new(
     module_name         => 'Evented::Configuration',
     dist_author         => 'Mitchell Cooper <cooper@cpan.org>',
     dist_abstract       => 'an evented configuration file in a unique and clean format',
-    requires            => { perl => '5.010' },
+    requires            => {
+        'perl'              => '5.010',
+        'Evented::Object'   => '3.50'
+    },
     recommends          => {},
     build_requires      => {},
     license             => 'bsd',

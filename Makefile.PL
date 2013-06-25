@@ -8,6 +8,8 @@ WriteMakefile
           'NAME' => 'Evented::Configuration',
           'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/Evented/Configuration.pm',
-          'PREREQ_PM' => {}
+          'PREREQ_PM' => {
+                           'Evented::Object' => '3.50'
+                         }
         )
 ;

@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.3';
+our $VERSION = '3.31';
 
 sub on  () { 1 }
 sub off () { undef }
