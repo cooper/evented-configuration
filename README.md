@@ -46,19 +46,22 @@ favorites = ['chocolate macadamia nut', 'chocolate chip']
 
 Evented::Configuration provides several convenient methods for fetching configuration values.
 
-## Evented::Configuration->new(\%config, $filename)
+## Evented::Configuration->new(%options)
 
 Creates a new instance of Evented::Configuration.
 
 ```perl
-our %config;
-my $conf = Evented::Configuration->new(\%config, 'etc/example.conf');
+my $conf = Evented::Configuration->new(conffile => 'etc/some.conf');
 ```
 
 ### Parameters
 
-* **config:** a hash reference which Evented::Configuration will store its data in.
-* **filename:** a string filename of the configuration to read.
+* **options:** a hash of constructor options.
+
+### %options - constructor options
+
+* __conffile__: file location of a configuration file.
+* __hashref__: *optional*, a hash ref to store configuration values in.
 
 ## $conf->parse_config()
 
@@ -118,7 +121,7 @@ foreach my $key ($conf->keys_of_block('someNamedBlock', 'someName')) {
 
 Attaches an event listener for the configuration change event. This event will be fired
 even if the value never existed. If you want a listener to be called the first time the
-configuration is parsed, simply add the listener before calling `parse_config()`.
+configuration is parsed, simply add the listener before calling `->parse_config()`.
 Otherwise, add listeners later.
 
 ```perl
@@ -134,7 +137,7 @@ $conf->on_change(['myNamedBlockType', 'myBlockName'], 'someKey', sub {
     ...
 });
 
-# an example with an unnamed block and register_event() options.
+# an example with an unnamed block and ->register_event() options.
 $conf->on_change('myUnnamedBlock', 'myKey', sub {
     my ($event, $old, $new) = @_;
     ...
@@ -146,7 +149,7 @@ $conf->on_change('myUnnamedBlock', 'myKey', sub {
 * __block__: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of `[block type, block name]`.
 * __key__: the key of the configuration value being listened for.
 * __code__: a code reference to be called when the value is changed.
-* __opts__: *optional*, a hash of any other options to be passed to EventedObject's `register_event()`.
+* __opts__: *optional*, a hash of any other options to be passed to EventedObject's `->register_event()`.
 
 # Events
 
@@ -154,9 +157,11 @@ Evented::Configuration fires events when configuration values are changed.
   
 In any case, events are fired with arguments `(old value, new value)`.  
   
-Say you have an unnamed block of type `myBlock`. If you changed the key `myKey` in `myBlock`, Evented::Configuration would fire the event `eventedObject.change:myBlock:myKey`.  
+Say you have an unnamed block of type `myBlock`. If you changed the key `myKey` in `myBlock`, Evented::Configuration would fire the event `eventedConfiguration.change:myBlock:myKey`.  
   
-Now assume you have a named block of type `myBlock` with name `myName`. If you changed the key `myKey` in `myBlock:myName`, Evented::Configuration would fire event `eventedObject.change:myBlock/myName:myKey`.
+Now assume you have a named block of type `myBlock` with name `myName`. If you changed the key `myKey` in `myBlock:myName`, Evented::Configuration would fire event `eventedConfiguration.change:myBlock/myName:myKey`.  
+  
+However, it is recommended that you use the `->on_change()` method rather than directly attaching event callbacks. This will insure compatibility for later versions that could possibly change the way events are fired.
 
 # History
 

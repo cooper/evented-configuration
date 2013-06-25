@@ -219,7 +219,23 @@ Perl software built upon L<EventedObject>.
 
 =head1 SYNOPSIS
 
+=head2 Example usage
+
+ # create a new configuration instance.
+ my $conf = Evented::Configuration->new(conffile => 'etc/some.conf');
+ 
+ # attach a callback to respond to changes of the user:age key.
+ $conf->on_change('user', 'name', sub {
+     my ($event, $old, $new) = @_;
+     say 'The user's age changed from ', $old || '(not born)', "to $new";
+ });
+ 
+ # parse the configuration file.
+ $conf->parse_config();
+
 =head2 Example configuration file
+
+ # some.conf file
 
  # Comments
  
@@ -250,23 +266,186 @@ Perl software built upon L<EventedObject>.
 As the name suggests, event firing is what makes Evented::Configuration unique in
 comparison to other configuration classes.
 
+=head2 Blocks
+
+Evented::Configuration's configuration is block-styled, with all keys and values associated with a block. Blocks can be "named," meaning there are several blocks of one type with different names, or they can be "unnamed," meaning there is only one block of that type.
+
+=head2 Objective
+
+Evented::Configuration's objective interface allows you to store nothing more than the configuration object. Then, make the object accessible where you need it.
+
+=head2 Event-driven
+
+Evented::Configuration is based upon the EventedObject framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
+
+=head2 Convenience
+
+Most configuration parsers spit out nothing more than a hash reference of keys and values. Evented::Configuration instead supplies several convenient methods for fetching configuration data.
+
+=head1 METHODS
+
+Evented::Configuration provides several convenient methods for fetching configuration values.
+
+=head2 Evented::Configuration->new(%opts)
+
+Creates a new instance of Evented::Configuration.
+
+ my $conf = Evented::Configuration->new(conffile => 'etc/some.conf');
+
+B<Parameters>
+
 =over 4
 
 =item *
 
-B<Blocks>: Evented::Configuration's configuration is block-styled, with all keys and values associated with a block. Blocks can be "named," meaning there are several blocks of one type with different names, or they can be "unnamed," meaning there is only one block of that type.
+B<options>: a hash of constructor options.
+
+=back
+
+B<%options - constructor options>
+
+=over 4
 
 =item *
 
-B<Objective>: Evented::Configuration's objective interface allows you to store nothing more than the configuration object. Then, make the object accessible where you need it.
+* B<conffile>: file location of a configuration file.
 
 =item *
 
-B<Event-driven>: Evented::Configuration is based upon the EventedObject framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
+* B<hashref>: I<optional>, a hash ref to store configuration values in.
+
+=back
+
+=head2 $conf->parse_config()
+
+Parses the configuration file. Used also to rehash configuration.
+
+ $conf->parse_config();
+
+=head2 $conf->get($block, $key)
+
+Fetches a single configuration value.
+
+ my $value = $conf->get('unnamedBlock', 'someKey');
+ my $other = $conf->get(['blockType', 'namedBlock'], 'someKey');
+
+B<Parameters>
+
+=over 4
 
 =item *
 
-B<Convenience>: Most configuration parsers spit out nothing more than a hash reference of keys and values. Evented::Configuration instead supplies several convenient methods for fetching configuration data.
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+
+=item *
+
+B<key>: the key of the configuration value being fetched.
+
+=back
+
+=head2 $conf->names_of_block($block_type)
+
+Returns an array of the names of all blocks of the specified type.
+
+ foreach my $block_name ($conf->names_of_block('cookies')) {
+     print "name of this cookie block: $block_name\n";
+ }
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<block_type>: the type of the named block.
+
+=back
+
+=head2 $conf->keys_of_block($block)
+
+Returns an array of all the keys in the specified block.
+
+ foreach my $key ($conf->keys_of_block('someUnnamedBlock')) {
+     print "someUnnamedBlock unnamed block has key: $key\n";
+ } 
+
+ foreach my $key ($conf->keys_of_block('someNamedBlock', 'someName')) {
+     print "someNamedBlock:someName named block has key: $key\n";
+ }
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+
+=back
+
+=head2 $conf->on_change($block, $key, $code, %opts)
+
+Attaches an event listener for the configuration change event. This event will be fired even if the value never existed. If you want a listener to be called the first time the configuration is parsed, simply add the listener before calling C<-E<gt>parse_config()>. Otherwise, add listeners later.
+
+ # an example with an unnamed block
+ $conf->on_change('myUnnamedBlock', 'myKey', sub {
+     my ($event, $old, $new) = @_;
+     ...
+ });
+ 
+ # an example with a name block.
+ $conf->on_change(['myNamedBlockType', 'myBlockName'], 'someKey', sub {
+     my ($event, $old, $new) = @_;
+     ...
+ });
+ 
+ # an example with an unnamed block and ->register_event() options.
+ $conf->on_change('myUnnamedBlock', 'myKey', sub {
+     my ($event, $old, $new) = @_;
+     ...
+ }, priority => 100, name => 'myCallback');
+
+B<Parameters>
+
+=over 4
+
+=item *
+
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+
+=item *
+
+B<key>: the key of the configuration value being listened for.
+
+=item *
+
+B<code>: a code reference to be called when the value is changed.
+
+=item *
+
+B<opts>: I<optional>, a hash of any other options to be passed to EventedObject's C<-E<gt>register_event()>.
+
+=back
+
+=head1 EVENTS
+
+Evented::Configuration fires events when configuration values are changed.
+
+In any case, events are fired with arguments C<(old value, new value)>.
+
+Say you have an unnamed block of type C<myBlock>. If you changed the key C<myKey> in C<myBlock>, Evented::Configuration would fire the event C<eventedConfiguration.change:myBlock:myKey>.
+
+Now assume you have a named block of type C<myBlock> with name C<myName>. If you changed the key C<myKey> in C<myBlock:myName>, Evented::Configuration would fire event C<eventedConfiguration.change:myBlock/myName:myKey>.
+
+However, it is recommended that you use the C<-E<gt>on_change()> method rather than directly attaching event callbacks. This will insure compatibility for later versions that could possibly change the way events are fired.
+
+=head1 SEE ALSO
+
+=over 4
+
+=item *
+
+L<Evented::Object> - the event class that powers Evented::Configuration.
 
 =back
 
@@ -274,7 +453,7 @@ B<Convenience>: Most configuration parsers spit out nothing more than a hash ref
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
 
-Copyright E<copy> 2011-2013. Released under BSD license.
+Copyright E<copy> 2013. Released under BSD license.
 
 =over 4
 
