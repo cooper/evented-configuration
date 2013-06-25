@@ -1,6 +1,6 @@
 # Evented::Configuration
 
-Evented::Configuration is an event-driven objective configuration class and parser for Perl software built upon EventedObject.
+Evented::Configuration is an event-driven objective configuration class and parser for Perl software built upon Evented::Object.
 
 # Features
 
@@ -8,7 +8,7 @@ Evented::Configuration is an event-driven objective configuration class and pars
 
 * **Objective:** Evented::Configuration's objective interface allows you to store nothing more than the configuration object. Then, make the object accessible where you need it.
 
-* **Event-driven:** Evented::Configuration is based upon the EventedObject framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
+* **Event-driven:** Evented::Configuration is based upon the Evented::Object framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
 
 * **Convenience:** Most configuration parsers spit out nothing more than a hash reference of keys and values. Evented::Configuration instead supplies several convenient methods for fetching configuration data.
 
@@ -149,7 +149,7 @@ $conf->on_change('myUnnamedBlock', 'myKey', sub {
 * __block__: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of `[block type, block name]`.
 * __key__: the key of the configuration value being listened for.
 * __code__: a code reference to be called when the value is changed.
-* __opts__: *optional*, a hash of any other options to be passed to EventedObject's `->register_event()`.
+* __opts__: *optional*, a hash of any other options to be passed to Evented::Object's `->register_event()`.
 
 # Events
 
@@ -169,5 +169,5 @@ The Evented::Configuration parser first appeared procedurally in juno-ircd versi
 
 # See also
 
-* [EventedObject](https://github.com/cooper/evented-object) - an event framework and the base class of Evented::Configuration.
+* [Evented::Object](https://github.com/cooper/evented-object) - an event framework and the base class of Evented::Configuration.
 * [Evented::Database](https://github.com/cooper/evented-database) - a database built upon Evented::Configuration with seamless database functionality added to a configuration class.

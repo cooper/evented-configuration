@@ -1,6 +1,7 @@
 # Copyright (c) 2013, Mitchell Cooper
 #
 # Evented::Configuration:
+#
 # a configuration file parser and event-driven configuration class.
 # Evented::Configuration is based on UICd::Configuration, the class of the UIC daemon.
 # UICd's parser was based on juno5's parser, which evolved from juno4, juno3, and juno2.
@@ -33,7 +34,7 @@
 #     ...
 # });
 #
-# You can also add additional hash arguments for register_event() to the end.
+# You can also add additional hash arguments for ->register_event() to the end.
 #
 
 package Evented::Configuration;
@@ -41,9 +42,9 @@ package Evented::Configuration;
 use warnings;
 use strict;
 use utf8;
-use parent 'EventedObject';
+use parent 'Evented::Object';
 
-our $VERSION = '3.2';
+our $VERSION = '3.3';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -215,7 +216,7 @@ sub on_change {
 =head1 NAME
 
 B<Evented::Configuration> - an event-driven objective configuration class and parser for
-Perl software built upon L<EventedObject>.
+Perl software built upon L<Evented::Object>.
 
 =head1 SYNOPSIS
 
@@ -280,7 +281,7 @@ configuration object. Then, make the object accessible where you need it.
 
 =head2 Event-driven
 
-Evented::Configuration is based upon the EventedObject framework, firing events each time
+Evented::Configuration is based upon the Evented::Object framework, firing events each time
 a configuration changes. This allows software to respond immediately to changes of user
 settings, etc.
 
@@ -438,7 +439,7 @@ B<code>: a code reference to be called when the value is changed.
 
 =item *
 
-B<opts>: I<optional>, a hash of any other options to be passed to EventedObject's
+B<opts>: I<optional>, a hash of any other options to be passed to Evented::Object's
 C<-E<gt>register_event()>.
 
 =back
