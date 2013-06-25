@@ -268,23 +268,32 @@ comparison to other configuration classes.
 
 =head2 Blocks
 
-Evented::Configuration's configuration is block-styled, with all keys and values associated with a block. Blocks can be "named," meaning there are several blocks of one type with different names, or they can be "unnamed," meaning there is only one block of that type.
+Evented::Configuration's configuration is block-styled, with all keys and values
+associated with a block. Blocks can be "named," meaning there are several blocks of one
+type with different names, or they can be "unnamed," meaning there is only one block of
+that type.
 
 =head2 Objective
 
-Evented::Configuration's objective interface allows you to store nothing more than the configuration object. Then, make the object accessible where you need it.
+Evented::Configuration's objective interface allows you to store nothing more than the
+configuration object. Then, make the object accessible where you need it.
 
 =head2 Event-driven
 
-Evented::Configuration is based upon the EventedObject framework, firing events each time a configuration changes. This allows software to respond immediately to changes of user settings, etc.
+Evented::Configuration is based upon the EventedObject framework, firing events each time
+a configuration changes. This allows software to respond immediately to changes of user
+settings, etc.
 
 =head2 Convenience
 
-Most configuration parsers spit out nothing more than a hash reference of keys and values. Evented::Configuration instead supplies several convenient methods for fetching configuration data.
+Most configuration parsers spit out nothing more than a hash reference of keys and values.
+Evented::Configuration instead supplies several convenient methods for fetching
+configuration data.
 
 =head1 METHODS
 
-Evented::Configuration provides several convenient methods for fetching configuration values.
+Evented::Configuration provides several convenient methods for fetching configuration
+values.
 
 =head2 Evented::Configuration->new(%opts)
 
@@ -335,7 +344,8 @@ B<Parameters>
 
 =item *
 
-B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be
+an array reference in the form of C<[block type, block name]>.
 
 =item *
 
@@ -379,13 +389,17 @@ B<Parameters>
 
 =item *
 
-B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be
+an array reference in the form of C<[block type, block name]>.
 
 =back
 
 =head2 $conf->on_change($block, $key, $code, %opts)
 
-Attaches an event listener for the configuration change event. This event will be fired even if the value never existed. If you want a listener to be called the first time the configuration is parsed, simply add the listener before calling C<-E<gt>parse_config()>. Otherwise, add listeners later.
+Attaches an event listener for the configuration change event. This event will be fired
+even if the value never existed. If you want a listener to be called the first time the
+configuration is parsed, simply add the listener before calling C<-E<gt>parse_config()>.
+Otherwise, add listeners later.
 
  # an example with an unnamed block
  $conf->on_change('myUnnamedBlock', 'myKey', sub {
@@ -411,7 +425,8 @@ B<Parameters>
 
 =item *
 
-B<block>: for unnamed blocks, should be the string block type. for named blocks, should be an array reference in the form of C<[block type, block name]>.
+B<block>: for unnamed blocks, should be the string block type. for named blocks, should be
+an array reference in the form of C<[block type, block name]>.
 
 =item *
 
@@ -423,7 +438,8 @@ B<code>: a code reference to be called when the value is changed.
 
 =item *
 
-B<opts>: I<optional>, a hash of any other options to be passed to EventedObject's C<-E<gt>register_event()>.
+B<opts>: I<optional>, a hash of any other options to be passed to EventedObject's
+C<-E<gt>register_event()>.
 
 =back
 
@@ -433,11 +449,17 @@ Evented::Configuration fires events when configuration values are changed.
 
 In any case, events are fired with arguments C<(old value, new value)>.
 
-Say you have an unnamed block of type C<myBlock>. If you changed the key C<myKey> in C<myBlock>, Evented::Configuration would fire the event C<eventedConfiguration.change:myBlock:myKey>.
+Say you have an unnamed block of type C<myBlock>. If you changed the key C<myKey> in
+C<myBlock>, Evented::Configuration would fire the event
+C<eventedConfiguration.change:myBlock:myKey>.
 
-Now assume you have a named block of type C<myBlock> with name C<myName>. If you changed the key C<myKey> in C<myBlock:myName>, Evented::Configuration would fire event C<eventedConfiguration.change:myBlock/myName:myKey>.
+Now assume you have a named block of type C<myBlock> with name C<myName>. If you changed
+the key C<myKey> in C<myBlock:myName>, Evented::Configuration would fire event
+C<eventedConfiguration.change:myBlock/myName:myKey>.
 
-However, it is recommended that you use the C<-E<gt>on_change()> method rather than directly attaching event callbacks. This will insure compatibility for later versions that could possibly change the way events are fired.
+However, it is recommended that you use the C<-E<gt>on_change()> method rather than
+directly attaching event callbacks. This will insure compatibility for later versions that
+could possibly change the way events are fired.
 
 =head1 SEE ALSO
 
