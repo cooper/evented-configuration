@@ -1,4 +1,4 @@
-# Copyright (c) 2012, Mitchell Cooper
+# Copyright (c) 2013, Mitchell Cooper
 #
 # Evented::Configuration:
 # a configuration file parser and event-driven configuration class.
