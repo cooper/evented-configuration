@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.31';
+our $VERSION = '3.4';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -95,7 +95,7 @@ sub parse_config {
         elsif ($line =~ m/^(\s*)([\w:]*)(\s*)[:=]+(.*)$/ && defined $block) {
             $key = trim($2);
             $val = eval trim($4);
-            die "Invalid value in $$conf{conffile} line $i: $@\n" if $@;
+            warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
             
             # the value has changed, so send the event.
             if (!exists $conf->{conf}{$block}{$name}{$key} || $conf->{conf}{$block}{$name}{$key} ne $val) {
@@ -117,7 +117,8 @@ sub parse_config {
 
         # I don't know how to handle this.
         else {
-            die "Invalid line $i of $$conf{conffile}\n";
+            warn "Invalid line $i of $$conf{conffile}";
+            return;
         }
 
     }
@@ -228,7 +229,7 @@ Perl software built upon L<Evented::Object>.
  # attach a callback to respond to changes of the user:age key.
  $conf->on_change('user', 'name', sub {
      my ($event, $old, $new) = @_;
-     say 'The user's age changed from ', $old || '(not born)', "to $new";
+     say 'The user\'s age changed from ', $old || '(not born)', "to $new";
  });
  
  # parse the configuration file.
@@ -296,7 +297,7 @@ configuration data.
 Evented::Configuration provides several convenient methods for fetching configuration
 values.
 
-=head2 Evented::Configuration->new(%opts)
+=head2 Evented::Configuration->new(%options)
 
 Creates a new instance of Evented::Configuration.
 
