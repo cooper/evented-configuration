@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.5';
+our $VERSION = '3.6';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -73,11 +73,11 @@ sub parse_config {
     open $config, '<', $conf->{conffile} or return;
     
     while (my $line = <$config>) {
-
         $i++;
         $line = trim($line);
         next unless $line;
         next if $line =~ m/^#/;
+        my $val_changed_maybe;
         
         # a block with a name.
         if ($line =~ m/^\[(.*?):(.*)\]$/) {
@@ -95,14 +95,15 @@ sub parse_config {
         elsif ($line =~ m/^(\s*)([\w:]*)(\s*)[:=]+(.*)$/ && defined $block) {
             $key = trim($2);
             $val = eval trim($4);
+            $val_changed_maybe++;
             warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
         }
 
         # a boolean key.
         elsif ($line =~ m/^(\s*)([\w:]*)(\s*)$/ && defined $block) {
             $key = trim($2);
-            $val = 1;
-            
+            $val++;
+            $val_changed_maybe++;
         }
         
         # I don't know how to handle this.
@@ -112,7 +113,7 @@ sub parse_config {
         }
 
         # something changed.
-        if ($val) {
+        if ($val_changed_maybe) {
             
             # determine the name of the event.
             my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
