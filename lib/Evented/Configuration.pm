@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Mitchell Cooper
+# Copyright (c) 2014, Mitchell Cooper
 #
 # Evented::Configuration:
 #
@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.6';
+our $VERSION = '3.7';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -69,7 +69,7 @@ sub new {
 
 # parse the configuration file.
 sub parse_config {
-    my ($conf, $i, $block, $name, $key, $val, $config) = shift;
+    my ($conf, $i, $block, $name, $config) = shift;
     open $config, '<', $conf->{conffile} or return;
     
     while (my $line = <$config>) {
@@ -77,7 +77,7 @@ sub parse_config {
         $line = trim($line);
         next unless $line;
         next if $line =~ m/^#/;
-        my $val_changed_maybe;
+        my ($key, $val, $val_changed_maybe);
         
         # a block with a name.
         if ($line =~ m/^\[(.*?):(.*)\]$/) {
@@ -100,7 +100,7 @@ sub parse_config {
         }
 
         # a boolean key.
-        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)$/ && defined $block) {
+        elsif ($line =~ m/^(\s*)([\w:]+)(\s*)$/ && defined $block) {
             $key = trim($2);
             $val++;
             $val_changed_maybe++;
@@ -128,8 +128,6 @@ sub parse_config {
             
         }
         
-        undef $key;
-        undef $val;
     }
     return 1;
 }
@@ -485,7 +483,7 @@ L<Evented::Object> - the event class that powers Evented::Configuration.
 
 L<Mitchell Cooper|https://github.com/cooper> <cooper@cpan.org>
 
-Copyright E<copy> 2013. Released under BSD license.
+Copyright E<copy> 2014. Released under BSD license.
 
 =over 4
 
