@@ -75,7 +75,7 @@ sub parse_config {
     while (my $line = <$config>) {
         $i++;
         $line = trim($line);
-        next unless $line;
+        next unless length $line;
         next if $line =~ m/^#/;
         my ($key, $val, $val_changed_maybe);
         
@@ -102,7 +102,7 @@ sub parse_config {
         # a boolean key.
         elsif ($line =~ m/^\s*([\w:]+)(.*?)$/ && defined $block) {
             $key = trim($1);
-            $val++;
+            $val = on;
             $val_changed_maybe++;
         }
         
