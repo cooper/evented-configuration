@@ -92,7 +92,7 @@ sub parse_config {
         }
 
         # a key and value.
-        elsif ($line =~ m/^\s*([\w:]*)\s*[:=]+(.*)$/ && defined $block) {
+        elsif ($line =~ m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
             $key = trim($1);
             $val = eval trim($2);
             $val_changed_maybe++;
@@ -102,7 +102,7 @@ sub parse_config {
         # a boolean key.
         elsif ($line =~ m/^\s*([\w:]+)(.*?)$/ && defined $block) {
             $key = trim($1);
-            $val = on;
+            $val++;
             $val_changed_maybe++;
         }
         
