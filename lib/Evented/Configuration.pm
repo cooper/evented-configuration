@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.4';
+our $VERSION = '3.5';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -78,7 +78,7 @@ sub parse_config {
         $line = trim($line);
         next unless $line;
         next if $line =~ m/^#/;
-
+        
         # a block with a name.
         if ($line =~ m/^\[(.*?):(.*)\]$/) {
             $block = trim($1);
@@ -96,33 +96,40 @@ sub parse_config {
             $key = trim($2);
             $val = eval trim($4);
             warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
-            
-            # the value has changed, so send the event.
-            if (!exists $conf->{conf}{$block}{$name}{$key} || $conf->{conf}{$block}{$name}{$key} ne $val) {
-            
-                # determine the name of the event.
-                my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
-                my $event_name = "eventedConfiguration.change:$eblock:$key";
-                
-                # fetch the old value and set the new value.
-                my $old = $conf->{conf}{$block}{$name}{$key};
-                $conf->{conf}{$block}{$name}{$key} = $val;
-                
-                # fire the event.
-                $conf->fire_event($event_name => $old, $val);
-                
-            }
-            
         }
 
+        # a boolean key.
+        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)$/ && defined $block) {
+            $key = trim($2);
+            $val = 1;
+            
+        }
+        
         # I don't know how to handle this.
         else {
             warn "Invalid line $i of $$conf{conffile}";
             return;
         }
 
+        # something changed.
+        if ($val) {
+            
+            # determine the name of the event.
+            my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
+            my $event_name = "eventedConfiguration.change:$eblock:$key";
+            
+            # fetch the old value and set the new value.
+            my $old = $conf->{conf}{$block}{$name}{$key};
+            $conf->{conf}{$block}{$name}{$key} = $val;
+            
+            # fire the event.
+            $conf->fire_event($event_name => $old, $val);
+            
+        }
+        
+        undef $key;
+        undef $val;
     }
-    
     return 1;
 }
 
