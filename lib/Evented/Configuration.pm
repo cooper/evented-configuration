@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.7';
+our $VERSION = '3.8';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -92,16 +92,16 @@ sub parse_config {
         }
 
         # a key and value.
-        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)[:=]+(.*)$/ && defined $block) {
-            $key = trim($2);
-            $val = eval trim($4);
+        elsif ($line =~ m/^\s*([\w:]*)\s*[:=]+(.*)$/ && defined $block) {
+            $key = trim($1);
+            $val = eval trim($2);
             $val_changed_maybe++;
             warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
         }
 
         # a boolean key.
-        elsif ($line =~ m/^(\s*)([\w:]+)(\s*)$/ && defined $block) {
-            $key = trim($2);
+        elsif ($line =~ m/^\s*([\w:]+)(.*?)$/ && defined $block) {
+            $key = trim($1);
             $val++;
             $val_changed_maybe++;
         }
