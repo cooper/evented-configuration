@@ -90,7 +90,14 @@ sub parse_config {
             $block = 'section';
             $name  = trim($1);
         }
-
+        
+        # a boolean key.
+        elsif ($line =~ m/^\s*([\w:]+)(.*?)$/ && defined $block) {
+            $key = trim($1);
+            $val++;
+            $val_changed_maybe++;
+        }
+        
         # a key and value.
         elsif ($line =~ m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
             $key = trim($1);
@@ -99,13 +106,6 @@ sub parse_config {
             warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
         }
 
-        # a boolean key.
-        elsif ($line =~ m/^\s*([\w:]+)(.*?)$/ && defined $block) {
-            $key = trim($1);
-            $val++;
-            $val_changed_maybe++;
-        }
-        
         # I don't know how to handle this.
         else {
             warn "Invalid line $i of $$conf{conffile}";
