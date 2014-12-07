@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.8';
+our $VERSION = '3.9';
 
 sub on  () { 1 }
 sub off () { undef }
@@ -92,7 +92,7 @@ sub parse_config {
         }
         
         # a boolean key.
-        elsif ($line =~ m/^\s*([\w:]+)\s*$/ && defined $block) {
+        elsif ($line =~ m/^\s*([\w:]+)\s*(#.*)*$/ && defined $block) {
             $key = trim($1);
             $val++;
             $val_changed_maybe++;
