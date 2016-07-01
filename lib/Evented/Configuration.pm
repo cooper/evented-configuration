@@ -1,4 +1,4 @@
-# Copyright (c) 2014, Mitchell Cooper
+# Copyright (c) 2016, Mitchell Cooper
 #
 # Evented::Configuration:
 #
@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.9';
+our $VERSION = '3.91';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
@@ -52,33 +52,33 @@ sub off () { undef }
 # create a new configuration instance.
 sub new {
     my ($class, %opts) = (shift, @_);
-    
+
     # if we still have no defined conffile, we must give up now.
     if (!defined $opts{conffile}) {
         $@ = 'no configuration file (conffile) option specified.';
         return;
     }
-    
+
     # if 'hashref' is provided, use it.
     $opts{conf} = $opts{hashref} || $opts{conf} || {};
-    
+
     # return the new configuration object.
     return bless \%opts, $class;
-    
+
 }
 
 # parse the configuration file.
 sub parse_config {
     my ($conf, $i, $block, $name, $config) = shift;
     open $config, '<', $conf->{conffile} or return;
-    
+
     while (my $line = <$config>) {
         $i++;
         $line = trim($line);
         next unless length $line;
         next if $line =~ m/^#/;
         my ($key, $val, $val_changed_maybe);
-        
+
         # a block with a name.
         if ($line =~ m/^\[(.*?):(.*)\]$/) {
             $block = trim($1);
@@ -90,44 +90,47 @@ sub parse_config {
             $block = 'section';
             $name  = trim($1);
         }
-        
+
         # a boolean key.
         elsif ($line =~ m/^\s*([\w:]+)\s*(#.*)*$/ && defined $block) {
             $key = trim($1);
             $val++;
             $val_changed_maybe++;
         }
-        
+
         # a key and value.
         elsif ($line =~ m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
             $key = trim($1);
             $val = eval trim($2);
             $val_changed_maybe++;
-            warn "Invalid value in $$conf{conffile} line $i: $@", return if $@;
+            if ($@) {
+                warn "Invalid value in $$conf{conffile} line $i: $@; parsing aborted";
+                return;
+            }
         }
 
         # I don't know how to handle this.
         else {
-            warn "Invalid line $i of $$conf{conffile}";
+            warn "Invalid line $i of $$conf{conffile}; parsing aborted";
             return;
         }
 
         # something changed.
         if ($val_changed_maybe) {
-            
+
             # determine the name of the event.
             my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
             my $event_name = "eventedConfiguration.change:$eblock:$key";
-            
+
             # fetch the old value and set the new value.
             my $old = $conf->{conf}{$block}{$name}{$key};
             $conf->{conf}{$block}{$name}{$key} = $val;
-            
+
             # fire the event.
             $conf->fire_event($event_name => $old, $val);
-            
+
         }
-        
+
     }
     return 1;
 }
@@ -137,46 +140,61 @@ sub parse_config {
 # supports   named blocks by get([block type, block name], key)
 sub has_block {
     my ($conf, $block) = @_;
-    $block = ['section', $block] if !ref $block || ref $block ne 'ARRAY';
-    return 1 if $conf->{conf}{$block->[0]}{$block->[1]};
+    my ($block_type, $block_name) = _block_parts($block);
+    return 1 if $conf->{conf}{$block_type}{$block_name};
 }
 
 # returns a list of all the names of a block type.
 # for example, names_of_block('listen') might return ('0.0.0.0', '127.0.0.1')
 sub names_of_block {
-    my ($conf, $blocktype) = @_;
-    return keys %{$conf->{conf}{$blocktype}};
+    my ($conf, $block_type) = @_;
+    return keys %{ $conf->{conf}{$block_type} };
 }
 
 # returns a list of all the keys in a block.
 # for example, keys_of_block('modules') would return an array of every module.
 # accepts block type or [block type, block name] as well.
 sub keys_of_block {
-    my ($conf, $block, $blocktype, $section) = (shift, shift);
-    $blocktype = (ref $block && ref $block eq 'ARRAY') ? $block->[0] : 'section';
-    $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
-    return my @a unless $conf->{conf}{$blocktype}{$section};
-    return keys %{$conf->{conf}{$blocktype}{$section}};
+    my ($conf, $block) = @_;
+    my ($block_type, $block_name) = _block_parts($block);
+
+    # not a hashref. return empty list.
+    my $hashref = $conf->{conf}{$block_type}{$block_name};
+    if (!$hashref || !ref $hashref || ref $hashref ne 'HASH') {
+        return;
+    }
+
+    return keys %$hashref;
 }
 
 # returns a list of all the values in a block.
 # accepts block type or [block type, block name] as well.
 sub values_of_block {
-    my ($conf, $block, $blocktype, $section) = (shift, shift);
-    $blocktype = (ref $block && ref $block eq 'ARRAY') ? $block->[0] : 'section';
-    $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
-    return my @a unless $conf->{conf}{$blocktype}{$section};
-    return values %{$conf->{conf}{$blocktype}{$section}};
+    my ($conf, $block) = @_;
+    my ($block_type, $block_name) = _block_parts($block);
+
+    # not a hashref. return empty list.
+    my $hashref = $conf->{conf}{$block_type}{$block_name};
+    if (!$hashref || !ref $hashref || ref $hashref ne 'HASH') {
+        return;
+    }
+
+    return values %$hashref;
 }
 
 # returns the key:value hash of a block.
 # accepts block type or [block type, block name] as well.
 sub hash_of_block {
-    my ($conf, $block, $blocktype, $section) = (shift, shift);
-    $blocktype = (ref $block && ref $block eq 'ARRAY') ? $block->[0] : 'section';
-    $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
-    return my %h unless $conf->{conf}{$blocktype}{$section};
-    return %{$conf->{conf}{$blocktype}{$section}};
+    my ($conf, $block) = @_;
+    my ($block_type, $block_name) = _block_parts($block);
+
+    # not a hashref. return empty list.
+    my $hashref = $conf->{conf}{$block_type}{$block_name};
+    if (!$hashref || !ref $hashref || ref $hashref ne 'HASH') {
+        return;
+    }
+
+    return %$hashref;
 }
 
 # get a configuration value.
@@ -184,10 +202,8 @@ sub hash_of_block {
 # supports   named blocks by get([block type, block name], key)
 sub get {
     my ($conf, $block, $key) = @_;
-    if (defined ref $block && ref $block eq 'ARRAY') {
-        return $conf->{conf}{$block->[0]}{$block->[1]}{$key};
-    }
-    return $conf->{conf}{section}{$block}{$key};
+    my ($block_type, $block_name) = _block_parts($block);
+    return $conf->{conf}{$block_type}{$block_name}{$key};
 }
 
 # remove leading and trailing whitespace.
@@ -202,20 +218,25 @@ sub trim {
 # see notes at top of file for usage.
 sub on_change {
     my ($conf, $block, $key, $code, %opts) = @_;
-    my ($block_type, $block_name) = ('section', $block);
-    
-    # if $block is an array reference, it's (type, name).
-    if (defined ref $block && ref $block eq 'ARRAY') {
-        ($block_type, $block_name) = @$block;
-    }
-    
+    my ($block_type, $block_name) = _block_parts($block);
+
     # determine the name of the event.
     $block = $block_type eq 'section' ? $block_name : $block_type.q(/).$block_name;
     my $event_name = "eventedConfiguration.change:$block:$key";
 
     # register the event.
     return $conf->register_event($event_name => $code, %opts);
-    
+
+}
+
+# handle 'unamed block' or [ 'block type', 'named block' ]
+# returns a list (block type, block name)
+sub _block_parts {
+    my $block = shift;
+    if (ref $block && ref $block eq 'ARRAY' && @$block >= 2) {
+        return @$block;
+    }
+    return ('section', $block);
 }
 
 1;
@@ -231,13 +252,13 @@ Perl software built upon L<Evented::Object>.
 
  # create a new configuration instance.
  my $conf = Evented::Configuration->new(conffile => 'etc/some.conf');
- 
+
  # attach a callback to respond to changes of the user:age key.
  $conf->on_change('user', 'name', sub {
      my ($event, $old, $new) = @_;
      say 'The user\'s age changed from ', $old || '(not born)', "to $new";
  });
- 
+
  # parse the configuration file.
  $conf->parse_config();
 
@@ -246,27 +267,27 @@ Perl software built upon L<Evented::Object>.
  # some.conf file
 
  # Comments
- 
+
  # Hello, I am a comment.
  # I am also a comment.
- 
+
  # Unnamed blocks
- 
+
  [ someBlock ]
- 
+
  someKey  = "some string"
  otherKey = 12
  another  = ['hello', 'there']
  evenMore = ['a'..'z']
- 
+
  # Named blocks
- 
+
  [ cookies: sugar ]
- 
+
  favorites = ['sugar cookie', 'snickerdoodle']
- 
+
  [ cookies: chocolate ]
- 
+
  favorites = ['chocolate macadamia nut', 'chocolate chip']
 
 =head1 DESCRIPTION
@@ -385,7 +406,7 @@ Returns an array of all the keys in the specified block.
 
  foreach my $key ($conf->keys_of_block('someUnnamedBlock')) {
      print "someUnnamedBlock unnamed block has key: $key\n";
- } 
+ }
 
  foreach my $key ($conf->keys_of_block('someNamedBlock', 'someName')) {
      print "someNamedBlock:someName named block has key: $key\n";
@@ -414,13 +435,13 @@ Otherwise, add listeners later.
      my ($event, $old, $new) = @_;
      ...
  });
- 
+
  # an example with a name block.
  $conf->on_change(['myNamedBlockType', 'myBlockName'], 'someKey', sub {
      my ($event, $old, $new) = @_;
      ...
  });
- 
+
  # an example with an unnamed block and ->register_event() options.
  $conf->on_change('myUnnamedBlock', 'myKey', sub {
      my ($event, $old, $new) = @_;
@@ -497,7 +518,7 @@ B<Email>: cooper@cpan.org
 
 =item *
 
-B<PAUSE/CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
+B<CPAN>: L<COOPER|http://search.cpan.org/~cooper/>
 
 =item *
 
