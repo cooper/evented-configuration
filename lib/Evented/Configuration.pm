@@ -120,7 +120,6 @@ sub parse_config {
 
             # determine the name of the event.
             my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
-            my $event_name = ;
 
             # fetch the old value and set the new value.
             my $old = $conf->{conf}{$block}{$name}{$key};
