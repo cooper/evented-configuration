@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.91';      # now incrementing by 0.01
+our $VERSION = '3.92';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
