@@ -44,7 +44,7 @@ use strict;
 use utf8;
 use parent 'Evented::Object';
 
-our $VERSION = '3.92';      # now incrementing by 0.01
+our $VERSION = '3.93';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
@@ -120,14 +120,18 @@ sub parse_config {
 
             # determine the name of the event.
             my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
-            my $event_name = "eventedConfiguration.change:$eblock:$key";
+            my $event_name = ;
 
             # fetch the old value and set the new value.
             my $old = $conf->{conf}{$block}{$name}{$key};
             $conf->{conf}{$block}{$name}{$key} = $val;
 
-            # fire the event.
-            $conf->fire_event($event_name => $old, $val);
+            # fire the events.
+            $conf->fire_events_together(
+                [ change                => [ $block, $name ], $key, $old, $val ],
+                [ "change:$eblock"      =>                    $key, $old, $val ],
+                [ "change:$eblock:$key" =>                          $old, $val ]
+            );
 
         }
 

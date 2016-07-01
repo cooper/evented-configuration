@@ -63,17 +63,15 @@ my $build = $class->new(
     dist_abstract       => 'an evented configuration file in a unique and clean format',
     requires            => {
         'perl'              => '5.010',
-        'Evented::Object'   => '3.50'
+        'Evented::Object'   => '5.55'
     },
     configure_requires  => {
-        'Module::Build' => '0.42'
+        'Module::Build'     => '0.42'
     },
     recommends          => {},
     build_requires      => {},
     license             => 'bsd',
     create_makefile_pl  => 'traditional',
-    # create_license    => 1,
-    # create_readme     => 1,
     dynamic_config      => 0,
     meta_merge          => {
         resources => {
