@@ -45,7 +45,7 @@ use utf8;
 use parent 'Evented::Object';
 use Carp;
 
-our $VERSION = '3.94';      # now incrementing by 0.01
+our $VERSION = '3.95';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
@@ -119,30 +119,12 @@ sub parse_config {
         # something changed.
         if ($val_changed_maybe) {
 
-            # determine the name of the event.
-            my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
-
             # fetch the old value and set the new value.
             my $old = $conf->{conf}{$block}{$name}{$key};
             $conf->{conf}{$block}{$name}{$key} = $val;
 
             # fire the events.
-            $conf->fire_events_together(
-
-                # change                        => sub { my ($blockref, $key, $old, $new) }
-                # change:namelessblock          => sub { my            ($key, $old, $new) }
-                # change:named/theName          => sub { my            ($key, $old, $new) }
-                # change:section:__ANY__        => sub { my ($the_type, $key, $old, $new) }
-                # change:named:__ANY__          => sub { my ($the_name, $key, $old, $new) }
-                # change:namelessblock:someKey  => sub { my                  ($old, $new) }
-                # change:named/theName:someKey  => sub { my                  ($old, $new) }
-
-                [ change                  => [ $block, $name ], $key, $old, $val ],
-                [ "change:$eblock"        =>                    $key, $old, $val ],
-                [ "change:$block:__ANY__" =>           $name,   $key, $old, $val ],
-                [ "change:$eblock:$key"   =>                          $old, $val ]
-
-            );
+            $conf->_fire_events($block, $name, $old, $val);
 
         }
 
@@ -242,6 +224,32 @@ sub on_change {
     # register the event.
     return $conf->register_event($event_name => $code, %opts);
 
+}
+
+# fire events for a change.
+sub _fire_events {
+    my ($conf, $block, $name, $old, $val) = @_;
+
+    # determine the name of the event.
+    my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
+
+    # fire the events.
+    $conf->fire_events_together(
+
+        # change                        => sub { my ($blockref, $key, $old, $new) }
+        # change:namelessblock          => sub { my            ($key, $old, $new) }
+        # change:named/theName          => sub { my            ($key, $old, $new) }
+        # change:section:__ANY__        => sub { my ($the_type, $key, $old, $new) }
+        # change:named:__ANY__          => sub { my ($the_name, $key, $old, $new) }
+        # change:namelessblock:someKey  => sub { my                  ($old, $new) }
+        # change:named/theName:someKey  => sub { my                  ($old, $new) }
+
+        [ change                  => [ $block, $name ], $key, $old, $val ],
+        [ "change:$eblock"        =>                    $key, $old, $val ],
+        [ "change:$block:__ANY__" =>           $name,   $key, $old, $val ],
+        [ "change:$eblock:$key"   =>                          $old, $val ]
+
+    );
 }
 
 # handle 'unamed block' or [ 'block type', 'named block' ]
