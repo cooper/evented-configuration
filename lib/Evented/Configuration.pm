@@ -43,8 +43,9 @@ use warnings;
 use strict;
 use utf8;
 use parent 'Evented::Object';
+use Carp;
 
-our $VERSION = '3.93';      # now incrementing by 0.01
+our $VERSION = '3.94';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
@@ -55,7 +56,7 @@ sub new {
 
     # if we still have no defined conffile, we must give up now.
     if (!defined $opts{conffile}) {
-        $@ = 'no configuration file (conffile) option specified.';
+        $@ = 'No configuration file (conffile) option specified';
         return;
     }
 
@@ -104,14 +105,14 @@ sub parse_config {
             $val = eval trim($2);
             $val_changed_maybe++;
             if ($@) {
-                warn "Invalid value in $$conf{conffile} line $i: $@; parsing aborted";
+                carp "Invalid value in $$conf{conffile} line $i: $@; parsing aborted";
                 return;
             }
         }
 
         # I don't know how to handle this.
         else {
-            warn "Invalid line $i of $$conf{conffile}; parsing aborted";
+            carp "Invalid line $i of $$conf{conffile}; parsing aborted";
             return;
         }
 
@@ -127,9 +128,20 @@ sub parse_config {
 
             # fire the events.
             $conf->fire_events_together(
-                [ change                => [ $block, $name ], $key, $old, $val ],
-                [ "change:$eblock"      =>                    $key, $old, $val ],
-                [ "change:$eblock:$key" =>                          $old, $val ]
+
+                # change                        => sub { my ($blockref, $key, $old, $new) }
+                # change:namelessblock          => sub { my            ($key, $old, $new) }
+                # change:named/theName          => sub { my            ($key, $old, $new) }
+                # change:section:__ANY__        => sub { my ($the_type, $key, $old, $new) }
+                # change:named:__ANY__          => sub { my ($the_name, $key, $old, $new) }
+                # change:namelessblock:someKey  => sub { my                  ($old, $new) }
+                # change:named/theName:someKey  => sub { my                  ($old, $new) }
+
+                [ change                  => [ $block, $name ], $key, $old, $val ],
+                [ "change:$eblock"        =>                    $key, $old, $val ],
+                [ "change:$block:__ANY__" =>           $name,   $key, $old, $val ],
+                [ "change:$eblock:$key"   =>                          $old, $val ]
+
             );
 
         }
@@ -225,7 +237,7 @@ sub on_change {
 
     # determine the name of the event.
     $block = $block_type eq 'section' ? $block_name : $block_type.q(/).$block_name;
-    my $event_name = "eventedConfiguration.change:$block:$key";
+    my $event_name = "change:$block:$key";
 
     # register the event.
     return $conf->register_event($event_name => $code, %opts);
@@ -483,11 +495,11 @@ In any case, events are fired with arguments C<(old value, new value)>.
 
 Say you have an unnamed block of type C<myBlock>. If you changed the key C<myKey> in
 C<myBlock>, Evented::Configuration would fire the event
-C<eventedConfiguration.change:myBlock:myKey>.
+C<change:myBlock:myKey>.
 
 Now assume you have a named block of type C<myBlock> with name C<myName>. If you changed
 the key C<myKey> in C<myBlock:myName>, Evented::Configuration would fire event
-C<eventedConfiguration.change:myBlock/myName:myKey>.
+C<change:myBlock/myName:myKey>.
 
 However, it is recommended that you use the C<-E<gt>on_change()> method rather than
 directly attaching event callbacks. This will insure compatibility for later versions that
