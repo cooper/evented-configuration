@@ -45,7 +45,7 @@ use utf8;
 use parent 'Evented::Object';
 use Carp;
 
-our $VERSION = '3.95';      # now incrementing by 0.01
+our $VERSION = '3.96';      # now incrementing by 0.01
 
 sub on  () { 1 }
 sub off () { undef }
@@ -124,7 +124,7 @@ sub parse_config {
             $conf->{conf}{$block}{$name}{$key} = $val;
 
             # fire the events.
-            $conf->_fire_events($block, $name, $old, $val);
+            $conf->_fire_events($block, $name, $key, $old, $val);
 
         }
 
@@ -228,7 +228,7 @@ sub on_change {
 
 # fire events for a change.
 sub _fire_events {
-    my ($conf, $block, $name, $old, $val) = @_;
+    my ($conf, $block, $name, $key, $old, $val) = @_;
 
     # determine the name of the event.
     my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
