@@ -42,23 +42,23 @@ package Evented::Configuration;
 use warnings;
 use strict;
 use utf8;
+use 5.010;
 use parent 'Evented::Object';
-use Carp;
+use Scalar::Util qw(blessed);
+use Carp qw(carp);
 
-our $VERSION = '3.96';      # now incrementing by 0.01
+our $VERSION = '3.97';      # now incrementing by 0.01
 
-sub on  () { 1 }
-sub off () { undef }
+my ($true, $false) = (1, 0);
+sub on  () { state $on  = bless \$true,  'Evented::Configuration::Boolean' }
+sub off () { state $off = bless \$false, 'Evented::Configuration::Boolean' }
 
 # create a new configuration instance.
 sub new {
     my ($class, %opts) = (shift, @_);
 
-    # if we still have no defined conffile, we must give up now.
-    if (!defined $opts{conffile}) {
-        $@ = 'No configuration file (conffile) option specified';
-        return;
-    }
+    # if we have no defined conffile, we must give up now.
+    return if !defined $opts{conffile};
 
     # if 'hashref' is provided, use it.
     $opts{conf} = $opts{hashref} || $opts{conf} || {};
@@ -73,34 +73,34 @@ sub parse_config {
     my ($conf, $i, $block, $name, $config) = shift;
     open $config, '<', $conf->{conffile} or return;
 
-    while (my $line = <$config>) {
-        $i++;
-        $line = trim($line);
-        next unless length $line;
-        next if $line =~ m/^#/;
+    while (<$config>) {
         my ($key, $val, $val_changed_maybe);
+        $i++;
+        $_ = trim($_);
+        next unless length;
+        next if m/^#/;
 
         # a block with a name.
-        if ($line =~ m/^\[(.*?):(.*)\]$/) {
+        if (m/^\[(.*?):(.*)\]$/) {
             $block = trim($1);
             $name  = trim($2);
         }
 
         # a nameless block.
-        elsif ($line =~ m/^\[(.*)\]$/) {
+        elsif (m/^\[(.*)\]$/) {
             $block = 'section';
             $name  = trim($1);
         }
 
         # a boolean key.
-        elsif ($line =~ m/^\s*([\w:]+)\s*(#.*)*$/ && defined $block) {
+        elsif (m/^\s*([\w:]+)\s*(#.*)*$/ && defined $block) {
             $key = trim($1);
-            $val++;
+            $val = on;
             $val_changed_maybe++;
         }
 
         # a key and value.
-        elsif ($line =~ m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
+        elsif (m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
             $key = trim($1);
             $val = eval trim($2);
             $val_changed_maybe++;
@@ -116,18 +116,15 @@ sub parse_config {
             return;
         }
 
-        # something changed.
-        if ($val_changed_maybe) {
+        # something may have changed.
+        next unless $val_changed_maybe;
 
-            # fetch the old value and set the new value.
-            my $old = $conf->{conf}{$block}{$name}{$key};
-            $conf->{conf}{$block}{$name}{$key} = $val;
+        # fetch the old value and set the new value.
+        my $old = $conf->{conf}{$block}{$name}{$key};
+        $conf->{conf}{$block}{$name}{$key} = $val;
 
-            # fire the events.
-            $conf->_fire_events($block, $name, $key, $old, $val);
-
-        }
-
+        # fire the events.
+        $conf->_fire_events($block, $name, $key, $old, $val);
     }
     return 1;
 }
@@ -176,7 +173,7 @@ sub values_of_block {
         return;
     }
 
-    return values %$hashref;
+    return map _value_to_perl($_), values %$hashref;
 }
 
 # returns the key:value hash of a block.
@@ -191,16 +188,18 @@ sub hash_of_block {
         return;
     }
 
-    return %$hashref;
+    return map { $_ => _value_to_perl($hashref->{$_}) } keys %$hashref;
 }
 
 # get a configuration value.
 # supports unnamed blocks by get(block, key)
 # supports   named blocks by get([block type, block name], key)
-sub get {
-    my ($conf, $block, $key) = @_;
+sub  get { _get(shift, 0, @_) }
+sub _get {
+    my ($conf, $bool_objs, $block, $key) = @_;
     my ($block_type, $block_name) = _block_parts($block);
-    return $conf->{conf}{$block_type}{$block_name}{$key};
+    my $res = $conf->{conf}{$block_type}{$block_name}{$key};
+    return $bool_objs ? $res : _value_to_perl($res);
 }
 
 # remove leading and trailing whitespace.
@@ -209,6 +208,15 @@ sub trim {
     $string =~ s/\s+$//;
     $string =~ s/^\s+//;
     return $string;
+}
+
+# convert stored value to Perl representation.
+sub _value_to_perl {
+    my ($val) = @_;
+    if (blessed $val && $val->isa('Evented::Configuration::Boolean')) {
+        return $$val ? 1 : undef;
+    }
+    return $val;
 }
 
 # attach a configuration change listener.
@@ -229,6 +237,8 @@ sub on_change {
 # fire events for a change.
 sub _fire_events {
     my ($conf, $block, $name, $key, $old, $val) = @_;
+    $old = _value_to_perl($old);
+    $val = _value_to_perl($val);
 
     # determine the name of the event.
     my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
