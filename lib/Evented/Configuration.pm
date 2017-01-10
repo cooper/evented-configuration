@@ -45,9 +45,8 @@ use utf8;
 use 5.010;
 use parent 'Evented::Object';
 use Scalar::Util qw(blessed);
-use Carp qw(carp);
 
-our $VERSION = '3.97';      # now incrementing by 0.01
+our $VERSION = '4.00';
 
 my ($true, $false) = (1, 0);
 sub on  () { state $on  = bless \$true,  'Evented::Configuration::Boolean' }
@@ -70,50 +69,76 @@ sub new {
 
 # parse the configuration file.
 sub parse_config {
-    my ($conf, $i, $block, $name, $config) = shift;
-    open $config, '<', $conf->{conffile} or return;
+    my ($conf) = @_;
+    my $file = $conf->{conffile};
 
-    while (<$config>) {
+    # open for reading
+    my $fh;
+    if (not open $fh, '<', $file) {
+        my $msg = "$file: Failed to open for reading: $!";
+        return (undef, $msg);
+    }
+
+    my ($block, $name, @new_conf);
+    my $err = sub {
+        my ($i, $msg) = @_;
+        $msg = "$file:$i: $msg; parsing aborted";
+        close $fh;
+        return wantarray ? (undef, $msg) : undef;
+    };
+
+    while (<$fh>) {
         my ($key, $val, $val_changed_maybe);
-        $i++;
-        $_ = trim($_);
+
+        # remove comments and excess whitespace.
+        chomp;
+        s/^\s*//;
+        s/\s*(#.*)$//;
         next unless length;
-        next if m/^#/;
 
         # a block with a name.
-        if (m/^\[(.*?):(.*)\]$/) {
+        if (m/^\[(.+?):(.+)\]$/) {
             $block = trim($1);
             $name  = trim($2);
         }
 
         # a nameless block.
-        elsif (m/^\[(.*)\]$/) {
+        elsif (m/^\[(.+)\]$/) {
             $block = 'section';
             $name  = trim($1);
         }
 
         # a boolean key.
-        elsif (m/^\s*([\w:]+)\s*(#.*)*$/ && defined $block) {
+        elsif (m/^([\w:]+)$/) {
             $key = trim($1);
             $val = on;
             $val_changed_maybe++;
+
+            # no block is set
+            return $err->($., "Stray key '$key'")
+                if !length $block;
         }
 
         # a key and value.
-        elsif (m/^\s*([\w:]+)\s*[:=]+(.+)$/ && defined $block) {
+        elsif (m/^([\w:]+)\s*[:=]+(.+)$/) {
             $key = trim($1);
-            $val = eval trim($2);
+            my $val_str = trim($2);
             $val_changed_maybe++;
-            if ($@) {
-                carp "Invalid value in $$conf{conffile} line $i: $@; parsing aborted";
-                return;
-            }
+
+            # no block is set
+            return $err->($., "Stray pair '$key = $val_str'")
+                if !length $block;
+
+            $val = eval $val_str;
+
+            # error occured in eval
+            return $err->($., "Invalid value '$val_str': $@")
+                if $@;
         }
 
         # I don't know how to handle this.
         else {
-            carp "Invalid line $i of $$conf{conffile}; parsing aborted";
-            return;
+            return $err->($., "Syntax error: '$_'");
         }
 
         # something may have changed.
@@ -121,11 +146,22 @@ sub parse_config {
 
         # fetch the old value and set the new value.
         my $old = $conf->{conf}{$block}{$name}{$key};
-        $conf->{conf}{$block}{$name}{$key} = $val;
 
-        # fire the events.
-        $conf->_fire_events($block, $name, $key, $old, $val);
+        # push the events.
+        push @new_conf, $block, $name, $key, $old, $val;
     }
+
+    # we parsed the entire file successfully, so commit the changes.
+    my @new_events;
+    while (my @set = splice @new_conf, 0, 5) {
+        push @new_events, $conf->_get_events(@set);
+        $conf->{conf}{ $set[0] }{ $set[1] }{ $set[2] } = $set[4];
+    }
+
+    # now fire change events.
+    $conf->fire_events_together(@new_events) if @new_events;
+
+    close $fh;
     return 1;
 }
 
@@ -231,11 +267,10 @@ sub on_change {
 
     # register the event.
     return $conf->register_event($event_name => $code, %opts);
-
 }
 
-# fire events for a change.
-sub _fire_events {
+# get events for a change.
+sub _get_events {
     my ($conf, $block, $name, $key, $old, $val) = @_;
     $old = _value_to_perl($old);
     $val = _value_to_perl($val);
@@ -243,8 +278,8 @@ sub _fire_events {
     # determine the name of the event.
     my $eblock = $block eq 'section' ? $name : $block.q(/).$name;
 
-    # fire the events.
-    $conf->fire_events_together(
+    # return the events.
+    return (
 
         # change                        => sub { my ($blockref, $key, $old, $new) }
         # change:namelessblock          => sub { my            ($key, $old, $new) }
