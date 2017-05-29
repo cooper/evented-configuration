@@ -1,12 +1,6 @@
-# Copyright (c) 2016, Mitchell Cooper
+# Copyright (c) 2017, Mitchell Cooper
 #
 # Evented::Configuration:
-#
-# a configuration file parser and event-driven configuration class.
-# Evented::Configuration is based on UICd::Configuration, the class of the UIC daemon.
-# UICd's parser was based on juno5's parser, which evolved from juno4, juno3, and juno2.
-# Early versions of Evented::Configuration were also found in several IRC bots, including
-# foxy-java. Evented::Configuration provides several convenience fetching methods.
 #
 # Events:
 #
@@ -34,7 +28,7 @@
 #     ...
 # });
 #
-# You can also add additional hash arguments for ->register_event() to the end.
+# You can also add additional hash arguments for ->register_callback() to the end.
 #
 
 package Evented::Configuration;
@@ -45,8 +39,9 @@ use utf8;
 use 5.010;
 use parent 'Evented::Object';
 use Scalar::Util qw(blessed);
+use File::Basename qw(dirname);
 
-our $VERSION = '4.00';
+our $VERSION = '4.01';
 
 my ($true, $false) = (1, 0);
 sub on  () { state $on  = bless \$true,  'Evented::Configuration::Boolean' }
@@ -100,6 +95,25 @@ sub parse_config {
         if (m/^\[(.+?):(.+)\]$/) {
             $block = trim($1);
             $name  = trim($2);
+            
+            # include
+            if ($block eq 'include') {
+                my $sfile = dirname($file)."/$name";
+                my $sconf = __PACKAGE__->new(conffile => $sfile);
+                
+                # error?
+                my ($ok, $err) = $sconf->parse_config;
+                return $err->($., "include error: $err") if !$ok;
+                
+                # inject
+                for my $sblock (keys %{ $sconf->{conf} }) {
+                for my $sname  (keys %{ $sconf->{conf}{$sblock} }) {
+                for my $skey   (keys %{ $sconf->{conf}{$sblock}{$sname} }) {
+                    my $old =  $conf->{conf}{$sblock}{$sname}{$skey};
+                    my $val = $sconf->{conf}{$sblock}{$sname}{$skey};
+                    push @new_conf, $sblock, $sname, $skey, $old, $val;
+                }}}
+            }
         }
 
         # a nameless block.
