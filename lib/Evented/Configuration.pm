@@ -336,7 +336,7 @@ Perl software built upon L<Evented::Object>.
  my $conf = Evented::Configuration->new(conffile => 'etc/some.conf');
 
  # attach a callback to respond to changes of the user:age key.
- $conf->on_change('user', 'name', sub {
+ $conf->on_change('user', 'age', sub {
      my ($event, $old, $new) = @_;
      say 'The user\'s age changed from ', $old || '(not born)', "to $new";
  });
