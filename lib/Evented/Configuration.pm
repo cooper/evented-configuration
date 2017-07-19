@@ -41,7 +41,7 @@ use parent 'Evented::Object';
 use Scalar::Util qw(blessed);
 use File::Basename qw(dirname);
 
-our $VERSION = '4.01';
+our $VERSION = '4.02';
 
 my ($true, $false) = (1, 0);
 sub on  () { state $on  = bless \$true,  'Evented::Configuration::Boolean' }

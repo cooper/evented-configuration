@@ -33,12 +33,12 @@ my $build = $class->new(
         'Evented::Object'   => '5.55'
     },
     build_requires      => {
-        'Pod::Readme'   => 0,
-        'Pod::Select'   => 0,
         'Test::More'    => 0,
     },
     configure_requires  => {
-        'Module::Build'     => '0.42'
+        'Module::Build'     => '0.42',
+        'Pod::Readme'       => 0,
+        'Pod::Select'       => 0
     },
     recommends          => {},
     build_requires      => {},
